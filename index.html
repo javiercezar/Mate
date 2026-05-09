@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Math Cross automático</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <button id="restartBtn" class="circle">↻</button>
+
+      <div class="select-wrap">
+        <label for="modeSelect">Modo</label>
+        <select id="modeSelect">
+          <option value="auto">Automático</option>
+          <option value="template">Plantilla fija</option>
+        </select>
+      </div>
+
+      <div class="select-wrap" id="templateWrap">
+        <label for="levelSelect">Plantilla</label>
+        <select id="levelSelect"></select>
+      </div>
+
+      <button id="newAutoBtn" class="primary small">Nuevo</button>
+
+      <div class="spacer"></div>
+      <span id="timer">00:00</span>
+      <button id="pauseBtn" class="circle small">⏸</button>
+    </header>
+
+    <section id="message" class="message">Arrastrá un número a una casilla vacía.</section>
+    <section id="board" class="board" aria-label="Tablero"></section>
+
+    <section class="tray">
+      <h3>Números disponibles</h3>
+      <div id="numbers" class="numbers"></div>
+    </section>
+
+    <footer class="bottom">
+      <button id="checkBtn" class="primary">Comprobar</button>
+      <button id="hintBtn" class="hint">💡 <small id="hintsLeft">x1</small></button>
+    </footer>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="modalTitle">Pausa</h2>
+      <p id="modalText">Juego pausado</p>
+      <button id="modalBtn">Continuar</button>
+    </div>
+  </div>
+
+  <script src="levels.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

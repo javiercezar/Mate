@@ -1,0 +1,217 @@
+:root{
+  --cell:#ffebb0;
+  --slot:#fff8df;
+  --num:#e8fbff;
+  --green:#098c43;
+  --red:#dc2626;
+  --blue:#234fbd;
+  --ink:#111;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:linear-gradient(145deg,#f4f7fd,#dfe7f5);
+  color:var(--ink);
+}
+.app{
+  max-width:820px;
+  min-height:100vh;
+  margin:auto;
+  padding:16px 10px 28px;
+}
+.topbar,.bottom{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.spacer{flex:1}
+.circle,.hint{
+  border:0;
+  background:white;
+  color:#3a5698;
+  box-shadow:0 2px 7px #9aa7bd70;
+  border-radius:999px;
+  font-size:28px;
+  width:54px;
+  height:54px;
+  cursor:pointer;
+}
+.circle.small{font-size:18px;width:46px;height:46px}
+.select-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-weight:700;
+  font-size:13px;
+}
+select{
+  border:0;
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:15px;
+  box-shadow:0 2px 7px #9aa7bd70;
+  background:white;
+}
+#timer{
+  font-size:20px;
+  font-weight:800;
+  background:white;
+  padding:12px 14px;
+  border-radius:16px;
+}
+.message{
+  margin-top:14px;
+  background:white;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:800;
+  color:#334155;
+}
+.message.error{color:var(--red)}
+.message.ok{color:var(--green)}
+.board{
+  background:white;
+  margin-top:12px;
+  padding:10px;
+  display:grid;
+  gap:0;
+  aspect-ratio:1/1;
+  box-shadow:0 2px 8px #8895aa40;
+  border-radius:14px;
+}
+.cell{
+  border:1px solid #333;
+  background:var(--cell);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:clamp(14px, 5vw, 40px);
+  font-weight:900;
+  user-select:none;
+  min-width:0;
+  min-height:0;
+}
+.blank{
+  border:0;
+  background:white;
+}
+.slot{
+  background:var(--slot);
+  cursor:pointer;
+}
+.slot.selected{
+  outline:4px solid #4e8cff;
+  z-index:2;
+}
+.slot.drag-over{
+  outline:4px solid #00a96b;
+  z-index:2;
+}
+.slot.correct{background:#d6ffd9}
+.slot.wrong{
+  background:#ffd6d6;
+  color:var(--red);
+  animation:shake .22s linear 2;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-4px)}
+  100%{transform:translateX(0)}
+}
+.tray{
+  background:white;
+  margin-top:16px;
+  padding:18px;
+  border-radius:14px;
+}
+.tray h3{margin:0 0 12px}
+.numbers{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:12px;
+}
+.tile{
+  min-height:70px;
+  border:2px solid #333;
+  border-radius:4px;
+  background:var(--num);
+  color:var(--green);
+  font-size:clamp(28px, 8vw, 48px);
+  font-weight:900;
+  cursor:grab;
+  touch-action:none;
+}
+.tile:active{cursor:grabbing}
+.tile.used{opacity:.22;pointer-events:none}
+.bottom{
+  justify-content:space-between;
+  padding:18px 8px 0;
+}
+.primary{
+  border:0;
+  background:var(--blue);
+  color:white;
+  font-weight:900;
+  font-size:20px;
+  border-radius:16px;
+  padding:15px 26px;
+  box-shadow:0 2px 7px #9aa7bd70;
+  cursor:pointer;
+}
+.primary.small{
+  font-size:15px;
+  padding:11px 16px;
+}
+.hint{
+  background:#fff;
+  color:#ffb000;
+  font-size:34px;
+  position:relative;
+}
+.hint small{
+  position:absolute;
+  right:6px;
+  bottom:-8px;
+  background:#2b4180;
+  color:white;
+  font-size:15px;
+  padding:3px 9px;
+  border-radius:16px;
+}
+.modal{
+  position:fixed;
+  inset:0;
+  background:#0008;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.modal.hidden{display:none}
+.modal-card{
+  background:white;
+  border-radius:18px;
+  padding:24px;
+  max-width:340px;
+  text-align:center;
+}
+#modalBtn{
+  border:0;
+  background:#234fbd;
+  color:white;
+  border-radius:14px;
+  padding:12px 22px;
+  font-weight:900;
+}
+@media(max-width:600px){
+  .app{padding-left:0;padding-right:0}
+  .topbar{padding:0 10px}
+  .message{margin-left:10px;margin-right:10px}
+  .board{border-radius:0}
+  .numbers{grid-template-columns:repeat(4,1fr)}
+  .tile{min-height:62px}
+}
