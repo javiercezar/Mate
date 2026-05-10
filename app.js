@@ -94,11 +94,9 @@ function randomEquation5(maxNum,level){
     }else if(op==="−"){
       if(level>=2){a=rnd(30,maxNum);b=rnd(15,Math.min(a-5,maxNum));if(b<15)continue;c=a-b}else{a=rnd(2,maxNum);b=rnd(1,Math.min(a-1,maxNum));c=a-b}
     }else if(op==="×"){
-      if(level>=2){a=rnd(3,Math.min(15,maxNum));const mb=Math.min(9,Math.floor(maxNum/a));if(mb<2)continue;b=rnd(2,mb);c=a*b}
-      else{a=rnd(1,Math.min(12,maxNum));b=rnd(1,Math.min(9,Math.floor(maxNum/a)));if(b<1)continue;c=a*b}
+      a=rnd(2,Math.min(12,maxNum));const mb=Math.min(9,Math.floor(maxNum/a));if(mb<2)continue;b=rnd(2,mb);c=a*b
     }else{
-      if(level>=2){b=rnd(2,Math.min(15,maxNum));const mc=Math.min(9,Math.floor(maxNum/b));if(mc<2)continue;c=rnd(2,mc);a=b*c}
-      else{b=rnd(1,Math.min(12,maxNum));const mc=Math.min(9,Math.floor(maxNum/b));if(mc<1)continue;c=rnd(1,mc);a=b*c}
+      b=rnd(2,Math.min(12,maxNum));const mc=Math.min(9,Math.floor(maxNum/b));if(mc<2)continue;c=rnd(2,mc);a=b*c
     }
     if([a,b,c].every(n=>Number.isInteger(n)&&n>=1&&n<=maxNum))return[a,op,b,"=",c];
   }
@@ -118,10 +116,10 @@ function equationWithKnown5(idx,val,maxNum,level){
       }else if(op==="−"){
         if(a<=1)continue;b=rnd(1,Math.min(a-1,maxNum));c=a-b
       }else if(op==="×"){
-        b=rnd(level>=2?2:1,Math.min(9,Math.floor(maxNum/a)));if(b<(level>=2?2:1))continue;c=a*b
+        if(a<2)continue;b=rnd(2,Math.min(9,Math.floor(maxNum/a)));if(b<2)continue;c=a*b
       }else{
-        const d=[];const maxD=level>=2?15:12;const maxR=9;
-        for(let i=level>=2?2:1;i<=maxD;i++)if(a%i===0&&a/i<=maxR)d.push(i);
+        const d=[];const maxD=12;const maxR=9;
+        for(let i=2;i<=maxD;i++)if(a%i===0&&a/i<=maxR)d.push(i);
         if(!d.length)continue;b=d[rnd(0,d.length-1)];c=a/b
       }
     }else if(idx===2){
@@ -132,9 +130,9 @@ function equationWithKnown5(idx,val,maxNum,level){
       }else if(op==="−"){
         a=rnd(b+1,maxNum);c=a-b
       }else if(op==="×"){
-        a=rnd(level>=2?2:1,Math.min(15,Math.floor(maxNum/b)));if(a<(level>=2?2:1))continue;c=a*b
+        a=rnd(2,Math.min(15,Math.floor(maxNum/b)));if(a<2)continue;c=a*b
       }else{
-        for(let i=level>=2?2:1;i<=15;i++){const a2=i*b;if(a2<=maxNum&&a2/b<=9){a=a2;c=i;break}}
+        for(let i=2;i<=15;i++){const a2=i*b;if(a2<=maxNum&&a2/b<=9){a=a2;c=i;break}}
         if(!a)continue
       }
     }else{
@@ -144,10 +142,10 @@ function equationWithKnown5(idx,val,maxNum,level){
       }else if(op==="−"){
         b=rnd(level>=2?5:1,Math.min(level>=2?Math.min(40,maxNum-c):30,maxNum));a=c+b;if(a>maxNum)continue
       }else if(op==="×"){
-        const d=[];for(let i=level>=2?2:1;i<=12;i++)if(c%i===0&&c/i<=9)d.push(i);
+        const d=[];for(let i=2;i<=12;i++)if(c%i===0&&c/i<=9)d.push(i);
         if(!d.length)continue;a=d[rnd(0,d.length-1)];b=c/a
       }else{
-        for(let i=level>=2?2:1;i<=12;i++){const a2=i*c;if(a2<=maxNum){a=a2;b=i;break}}
+        for(let i=2;i<=12;i++){const a2=i*c;if(a2<=maxNum){a=a2;b=i;break}}
         if(!a)continue
       }
     }
@@ -388,7 +386,7 @@ function useHint(){if(hints<=0)return;const target=[...document.querySelectorAll
 function updateHints(){document.getElementById("hintsLeft").textContent="x"+hints}
 function startTimer(){clearInterval(timerId);timerId=setInterval(()=>{if(!running)return;seconds++;const m=String(Math.floor(seconds/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");timer.textContent=`${m}:${s}`},1000)}
 function pause(){running=false;modalTitle.textContent="Pausa";modalText.textContent="Juego pausado.";modal.classList.remove("hidden")}
-function resume(){running=true;modal.classList.add("hidden")}
+function resume(){if(modalTitle.textContent!=="Pausa"){modal.classList.add("hidden");return}running=true;modal.classList.add("hidden")}
 function win(){running=false;modalTitle.textContent="¡Ganaste!";modalText.textContent=`Completaste el crucigrama en ${timer.textContent}.`;modal.classList.remove("hidden")}
 function restart(){
   seconds=0;timer.textContent="00:00";running=true;selected=null;placed={};modal.classList.add("hidden");
