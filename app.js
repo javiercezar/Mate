@@ -42,9 +42,9 @@ const FORMATS = [
 ];
 
 const DIFFICULTIES = [
-  {name:"Fácil",hints:4,maxNum:50},
-  {name:"Medio",hints:2,maxNum:99},
-  {name:"Difícil",hints:1,maxNum:99},
+  {name:"Fácil",hints:4,maxNum:50,level:0},
+  {name:"Medio",hints:2,maxNum:99,level:1},
+  {name:"Difícil",hints:1,maxNum:99,level:2},
 ];
 
 const THEMES = [
@@ -72,44 +72,73 @@ function calc(a,op,b){
   return null;
 }
 
-function randomEquation5(maxNum){
+function randomEquation5(maxNum,level){
   const ops=["+","−","×","÷"];
   for(let t=0;t<500;t++){
     const op=ops[rnd(0,3)];
     let a,b,c;
-    if(op==="+"){a=rnd(1,Math.min(50,maxNum));b=rnd(1,Math.min(50,maxNum));c=a+b;if(c>maxNum)continue}
-    else if(op==="−"){a=rnd(2,maxNum);b=rnd(1,Math.min(a-1,maxNum));c=a-b}
-    else if(op==="×"){a=rnd(1,Math.min(12,maxNum));b=rnd(1,Math.min(9,Math.floor(maxNum/a)));if(b<1)continue;c=a*b}
-    else{b=rnd(1,Math.min(12,maxNum));const maxC=Math.min(9,Math.floor(maxNum/b));if(maxC<1)continue;c=rnd(1,maxC);a=b*c}
+    if(op==="+"){
+      if(level>=2){a=rnd(20,Math.min(49,maxNum-1));b=rnd(20,Math.min(49,maxNum-a));if(b<20||a+b>maxNum)continue;c=a+b}
+      else{a=rnd(1,Math.min(50,maxNum));b=rnd(1,Math.min(50,maxNum));c=a+b;if(c>maxNum)continue}
+    }else if(op==="−"){
+      if(level>=2){a=rnd(30,maxNum);b=rnd(15,Math.min(a-5,maxNum));if(b<15)continue;c=a-b}else{a=rnd(2,maxNum);b=rnd(1,Math.min(a-1,maxNum));c=a-b}
+    }else if(op==="×"){
+      if(level>=2){a=rnd(3,Math.min(15,maxNum));const mb=Math.min(9,Math.floor(maxNum/a));if(mb<2)continue;b=rnd(2,mb);c=a*b}
+      else{a=rnd(1,Math.min(12,maxNum));b=rnd(1,Math.min(9,Math.floor(maxNum/a)));if(b<1)continue;c=a*b}
+    }else{
+      if(level>=2){b=rnd(2,Math.min(15,maxNum));const mc=Math.min(9,Math.floor(maxNum/b));if(mc<2)continue;c=rnd(2,mc);a=b*c}
+      else{b=rnd(1,Math.min(12,maxNum));const mc=Math.min(9,Math.floor(maxNum/b));if(mc<1)continue;c=rnd(1,mc);a=b*c}
+    }
     if([a,b,c].every(n=>Number.isInteger(n)&&n>=1&&n<=maxNum))return[a,op,b,"=",c];
   }
   return[1,"+",1,"=",2];
 }
 
-function equationWithKnown5(idx,val,maxNum){
+function equationWithKnown5(idx,val,maxNum,level){
   const ops=["+","−","×","÷"];
   for(let t=0;t<1000;t++){
     const op=ops[rnd(0,3)];
     let a,b,c;
-    const limit=Math.min(50,maxNum);
     if(idx===0){
       a=val;
-      if(op==="+"){b=rnd(1,limit);c=a+b;if(c>maxNum)continue}
-      else if(op==="−"){if(a<=1)continue;b=rnd(1,Math.min(a-1,maxNum));c=a-b}
-      else if(op==="×"){b=rnd(1,Math.min(9,Math.floor(maxNum/a)));if(b<1)continue;c=a*b}
-      else{const d=[];for(let i=1;i<=12;i++)if(a%i===0&&a/i<=9)d.push(i);if(!d.length)continue;b=d[rnd(0,d.length-1)];c=a/b}
+      if(op==="+"){
+        if(level>=2){b=rnd(20,Math.min(49,maxNum-a));if(b<20||a+b>maxNum)continue;c=a+b}
+        else{b=rnd(1,Math.min(50,maxNum));c=a+b;if(c>maxNum)continue}
+      }else if(op==="−"){
+        if(a<=1)continue;b=rnd(1,Math.min(a-1,maxNum));c=a-b
+      }else if(op==="×"){
+        b=rnd(level>=2?2:1,Math.min(9,Math.floor(maxNum/a)));if(b<(level>=2?2:1))continue;c=a*b
+      }else{
+        const d=[];const maxD=level>=2?15:12;const maxR=9;
+        for(let i=level>=2?2:1;i<=maxD;i++)if(a%i===0&&a/i<=maxR)d.push(i);
+        if(!d.length)continue;b=d[rnd(0,d.length-1)];c=a/b
+      }
     }else if(idx===2){
       b=val;
-      if(op==="+"){a=rnd(1,limit);c=a+b;if(c>maxNum)continue}
-      else if(op==="−"){a=rnd(b+1,maxNum);c=a-b}
-      else if(op==="×"){a=rnd(1,Math.min(12,Math.floor(maxNum/b)));if(a<1)continue;c=a*b}
-      else{for(let i=1;i<=12;i++){const a2=i*b;if(a2<=maxNum){a=a2;c=i;break}}if(!a)continue}
+      if(op==="+"){
+        if(level>=2){a=rnd(20,Math.min(49,maxNum-b));if(a<20||a+b>maxNum)continue;c=a+b}
+        else{a=rnd(1,Math.min(50,maxNum));c=a+b;if(c>maxNum)continue}
+      }else if(op==="−"){
+        a=rnd(b+1,maxNum);c=a-b
+      }else if(op==="×"){
+        a=rnd(level>=2?2:1,Math.min(15,Math.floor(maxNum/b)));if(a<(level>=2?2:1))continue;c=a*b
+      }else{
+        for(let i=level>=2?2:1;i<=15;i++){const a2=i*b;if(a2<=maxNum&&a2/b<=9){a=a2;c=i;break}}
+        if(!a)continue
+      }
     }else{
       c=val;
-      if(op==="+"){if(c<2)continue;a=rnd(1,c-1);b=c-a}
-      else if(op==="−"){b=rnd(1,Math.min(30,maxNum));a=c+b;if(a>maxNum)continue}
-      else if(op==="×"){const d=[];for(let i=1;i<=12;i++)if(c%i===0&&c/i<=9)d.push(i);if(!d.length)continue;a=d[rnd(0,d.length-1)];b=c/a}
-      else{for(let i=1;i<=12;i++){const a2=i*c;if(a2<=maxNum){a=a2;b=i;break}}if(!a)continue}
+      if(op==="+"){
+        if(c<2)continue;a=rnd(1,c-1);b=c-a
+      }else if(op==="−"){
+        b=rnd(level>=2?5:1,Math.min(level>=2?Math.min(40,maxNum-c):30,maxNum));a=c+b;if(a>maxNum)continue
+      }else if(op==="×"){
+        const d=[];for(let i=level>=2?2:1;i<=12;i++)if(c%i===0&&c/i<=9)d.push(i);
+        if(!d.length)continue;a=d[rnd(0,d.length-1)];b=c/a
+      }else{
+        for(let i=level>=2?2:1;i<=12;i++){const a2=i*c;if(a2<=maxNum){a=a2;b=i;break}}
+        if(!a)continue
+      }
     }
     if([a,b,c].every(n=>Number.isInteger(n)&&n>=1&&n<=maxNum)){
       const v=[a,op,b,"=",c];
@@ -129,16 +158,16 @@ function validLine(cells,line,v,size){
   return true;
 }
 
-function lineCandidate(cells,line,maxNum){
+function lineCandidate(cells,line,maxNum,level){
   const known=[];
   for(const idx of[0,2,4]){
     const p=coords(line,idx),old=cells[p.r]?.[p.c];
     if(old!==""&&/^\d+$/.test(String(old)))known.push({idx,val:Number(old)});
   }
-  if(!known.length)return randomEquation5(maxNum);
+  if(!known.length)return randomEquation5(maxNum,level);
   for(let t=0;t<700;t++){
     const first=known[0];
-    const v=equationWithKnown5(first.idx,first.val,maxNum);
+    const v=equationWithKnown5(first.idx,first.val,maxNum,level);
     if(!v)continue;
     if(known.every(k=>Number(v[k.idx])===k.val))return v;
   }
@@ -166,25 +195,34 @@ function generatePuzzle(){
     for(const line of format.lines){
       let values=null;
       for(let t=0;t<700;t++){
-        const cand=lineCandidate(cells,line,diff.maxNum);
+        const cand=lineCandidate(cells,line,diff.maxNum,diff.level);
         if(cand&&validLine(cells,line,cand,size)){values=cand;break}
       }
       if(!values){failed=true;break}
       for(let i=0;i<5;i++){const p=coords(line,i);cells[p.r][p.c]=String(values[i])}
     }
     if(failed||!verifyAll(cells,format))continue;
-    const solution={},hidden=[];
+    const solution={},hidden=[],solVals=new Set();
     for(const line of format.lines){
       for(const idx of line.hide){
         const p=coords(line,idx),k=key(p.r,p.c),value=cells[p.r][p.c];
         if(value!==""&&/^\d+$/.test(value)&&solution[k]===undefined){
-          solution[k]=Number(value);
-          hidden.push(Number(value));
+          const n=Number(value);
+          solution[k]=n;
+          hidden.push(n);
+          solVals.add(n);
           cells[p.r][p.c]="";
         }
       }
     }
-    return{size,cells,solution,numbers:shuffle(hidden),hints:diff.hints,name:format.name};
+    const numbers=[...hidden];
+    const extraCount=hidden.length;
+    for(let i=0;i<extraCount;i++){
+      let n;
+      for(let t=0;t<50;t++){n=rnd(1,diff.maxNum);if(!solVals.has(n))break}
+      if(n!==undefined&&!solVals.has(n)){numbers.push(n);solVals.add(n)}else break;
+    }
+    return{size,cells,solution,numbers:shuffle(numbers),hints:diff.hints,name:format.name};
   }
   alert("No se pudo generar el formato. Probá nuevamente.");
   return{size:5,cells:[["1","+","","=","2"],["","","","",""],["","","","",""],["","","","",""],["","","","",""]],solution:{"0-2":1},numbers:[1],hints:1,name:"Emergencia"};
@@ -240,6 +278,7 @@ function buildBoard(){
         else if(val==="×")d.classList.add("symbol","op-mul");
         else if(val==="÷")d.classList.add("symbol","op-div");
         else if(val==="=")d.classList.add("symbol","op-eq");
+        else if(/^\d+$/.test(val))d.classList.add("num");
       }
       board.appendChild(d);
     }
