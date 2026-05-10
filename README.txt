@@ -29,3 +29,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 }
+
+
+## Corrección adicional
+- Se corrigió la traba al arrastrar en celular.
+- Ahora el número solo entra en modo arrastre si realmente se mueve.
+- Se limpian correctamente los eventos táctiles al soltar o cancelar.

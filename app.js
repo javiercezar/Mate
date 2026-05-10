@@ -8,6 +8,9 @@ let timerId = null;
 let hints = 0;
 let draggedTile = null;
 let touchTile = null;
+let didDrag = false;
+let dragStartX = 0;
+let dragStartY = 0;
 
 const board = document.getElementById("board");
 const numbers = document.getElementById("numbers");
@@ -283,6 +286,10 @@ function buildNumbers(){
     btn.draggable = true;
 
     btn.onclick = () => {
+      if(didDrag) {
+        didDrag = false;
+        return;
+      }
       if(!touchTile) placeByClick(btn);
     };
 
@@ -310,33 +317,51 @@ function startTouchDrag(e){
   if(btn.classList.contains("used")) return;
 
   touchTile = btn;
-  btn.setPointerCapture?.(e.pointerId);
-  ghost.textContent = btn.dataset.value;
-  ghost.classList.remove("hidden");
-  moveGhost(e.clientX, e.clientY);
+  didDrag = false;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
 
   const move = ev => {
-    ev.preventDefault();
-    moveGhost(ev.clientX, ev.clientY);
-    markSlotUnder(ev.clientX, ev.clientY);
+    const dx = Math.abs(ev.clientX - dragStartX);
+    const dy = Math.abs(ev.clientY - dragStartY);
+
+    if(dx + dy > 8) {
+      didDrag = true;
+      ev.preventDefault();
+      ghost.textContent = btn.dataset.value;
+      ghost.classList.remove("hidden");
+      moveGhost(ev.clientX, ev.clientY);
+      markSlotUnder(ev.clientX, ev.clientY);
+    }
   };
 
-  const up = ev => {
+  const finish = ev => {
     document.removeEventListener("pointermove", move);
-    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointerup", finish);
+    document.removeEventListener("pointercancel", finish);
+
     ghost.classList.add("hidden");
     document.querySelectorAll(".drag-over").forEach(x => x.classList.remove("drag-over"));
 
-    const slot = slotAt(ev.clientX, ev.clientY);
-    if(slot){
-      selectSlot(slot);
-      placeNumber(btn);
+    if(didDrag){
+      const slot = slotAt(ev.clientX, ev.clientY);
+      if(slot){
+        selectSlot(slot);
+        placeNumber(btn);
+      }
+
+      setTimeout(() => {
+        touchTile = null;
+        didDrag = false;
+      }, 180);
+    } else {
+      touchTile = null;
     }
-    setTimeout(()=> touchTile = null, 120);
   };
 
   document.addEventListener("pointermove", move, {passive:false});
-  document.addEventListener("pointerup", up);
+  document.addEventListener("pointerup", finish);
+  document.addEventListener("pointercancel", finish);
 }
 
 function moveGhost(x,y){
