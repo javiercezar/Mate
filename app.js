@@ -206,7 +206,7 @@ function applyTheme(theme){
 function init(){
   FORMATS.forEach((f,i)=>{const o=document.createElement("option");o.value=i;o.textContent=f.name;formatSelect.appendChild(o)});
   formatSelect.onchange=restart;
-  difficultySelect.onchange=()=>{currentDifficulty=Number(difficultySelect.value);restart()};
+  difficultySelect.onchange=()=>{currentDifficulty=Number(difficultySelect.value);setMessage(`${DIFFICULTIES[currentDifficulty].name}`);restart()};
   document.getElementById("newBtn").onclick=restart;
   document.getElementById("restartBtn").onclick=restart;
   document.getElementById("pauseBtn").onclick=pause;
@@ -233,7 +233,14 @@ function buildBoard(){
         d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("drag-over")});
         d.addEventListener("dragleave",()=>d.classList.remove("drag-over"));
         d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("drag-over");if(draggedTile){selectSlot(d);placeNumber(draggedTile)}});
-      }else d.textContent=val;
+      }else{
+        d.textContent=val;
+        if(val==="+")d.classList.add("symbol","op-add");
+        else if(val==="−")d.classList.add("symbol","op-sub");
+        else if(val==="×")d.classList.add("symbol","op-mul");
+        else if(val==="÷")d.classList.add("symbol","op-div");
+        else if(val==="=")d.classList.add("symbol","op-eq");
+      }
       board.appendChild(d);
     }
   }
@@ -321,6 +328,6 @@ function restart(){
   seconds=0;timer.textContent="00:00";running=true;selected=null;placed={};modal.classList.add("hidden");
   applyTheme(THEMES[rnd(0,THEMES.length-1)]);
   currentPuzzle=generatePuzzle();hints=currentPuzzle.hints;buildBoard();buildNumbers();
-  setMessage("Arrastrá un número a una casilla vacía.");
+  setMessage(`${DIFFICULTIES[currentDifficulty].name} · Arrastrá un número a una casilla vacía.`);
 }
 init();
