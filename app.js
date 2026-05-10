@@ -1,7 +1,7 @@
 const FORMATS = [
   {
     name: "Cruz",
-    size: 11,
+    size: 15,
     lines: [
       {r:0, c:0, d:"h", hide:[0]},
       {r:0, c:4, d:"v", hide:[4]},
@@ -10,11 +10,15 @@ const FORMATS = [
       {r:4, c:4, d:"h", hide:[0]},
       {r:4, c:8, d:"v", hide:[4]},
       {r:6, c:6, d:"h", hide:[2]},
+      {r:6, c:10, d:"v", hide:[4]},
+      {r:8, c:8, d:"h", hide:[0]},
+      {r:8, c:12, d:"v", hide:[4]},
+      {r:10, c:10, d:"h", hide:[2]},
     ]
   },
   {
     name: "Escalera",
-    size: 11,
+    size: 15,
     lines: [
       {r:0, c:0, d:"h", hide:[0]},
       {r:0, c:2, d:"v", hide:[4]},
@@ -24,19 +28,26 @@ const FORMATS = [
       {r:4, c:6, d:"v", hide:[4]},
       {r:6, c:6, d:"h", hide:[2]},
       {r:6, c:8, d:"v", hide:[4]},
+      {r:8, c:8, d:"h", hide:[0]},
+      {r:8, c:10, d:"v", hide:[4]},
+      {r:10, c:10, d:"h", hide:[2]},
+      {r:10, c:12, d:"v", hide:[4]},
     ]
   },
   {
     name: "Puente",
-    size: 11,
+    size: 15,
     lines: [
-      {r:0, c:0, d:"h", hide:[0]},
-      {r:0, c:4, d:"v", hide:[4]},
-      {r:2, c:2, d:"h", hide:[2]},
-      {r:2, c:6, d:"v", hide:[4]},
-      {r:4, c:4, d:"h", hide:[0]},
-      {r:6, c:6, d:"h", hide:[2]},
+      {r:0, c:2, d:"h", hide:[0]},
+      {r:0, c:6, d:"v", hide:[4]},
+      {r:2, c:4, d:"h", hide:[2]},
+      {r:2, c:8, d:"v", hide:[4]},
+      {r:4, c:6, d:"h", hide:[0]},
       {r:4, c:10, d:"v", hide:[4]},
+      {r:6, c:8, d:"h", hide:[2]},
+      {r:6, c:12, d:"v", hide:[4]},
+      {r:8, c:10, d:"h", hide:[0]},
+      {r:8, c:14, d:"v", hide:[4]},
     ]
   }
 ];
@@ -229,7 +240,20 @@ function generatePuzzle(){
         }
       }
     }
-    return{size,cells,solution,numbers:shuffle([...hidden]),hints:diff.hints,name:format.name};
+    const distractors=[],hiddenSet=new Set(hidden);
+    for(let i=0;i<hidden.length;i++){
+      let found=false;
+      for(let t=0;t<100;t++){
+        const d=rnd(1,diff.maxNum);
+        if(!hiddenSet.has(d)&&!distractors.includes(d)){distractors.push(d);found=true;break}
+      }
+      if(!found){
+        for(let d=1;d<=diff.maxNum;d++){
+          if(!hiddenSet.has(d)&&!distractors.includes(d)){distractors.push(d);break}
+        }
+      }
+    }
+    return{size,cells,solution,numbers:shuffle([...hidden,...distractors]),hints:diff.hints,name:format.name};
   }
   alert("No se pudo generar el formato. Probá nuevamente.");
   return{size:5,cells:[["1","+","","=","2"],["","","","",""],["","","","",""],["","","","",""],["","","","",""]],solution:{"0-2":1},numbers:[1],hints:1,name:"Emergencia"};
@@ -253,7 +277,6 @@ function init(){
   formatSelect.onchange=restart;
   difficultySelect.onchange=()=>{currentDifficulty=Number(difficultySelect.value);setMessage(`${DIFFICULTIES[currentDifficulty].name}`);restart()};
   document.getElementById("newBtn").onclick=restart;
-  document.getElementById("restartBtn").onclick=restart;
   document.getElementById("pauseBtn").onclick=pause;
   document.getElementById("modalBtn").onclick=resume;
   document.getElementById("checkBtn").onclick=checkAll;
@@ -304,7 +327,7 @@ function buildNumbers(){
     numbers.appendChild(b);
   });
   updateHints();
-  availableCount.textContent=`${currentPuzzle.numbers.length} para completar`;
+  availableCount.textContent=`${Object.keys(currentPuzzle.solution).length} para completar · ${currentPuzzle.numbers.length} fichas`;
 }
 
 function startTouchDrag(e){
