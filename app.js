@@ -83,10 +83,10 @@ function calc(a,op,b){
   return null;
 }
 
-function randomEquation5(maxNum,level){
-  const ops=["+","−","×","÷"];
+function randomEquation5(maxNum,level,lastOp){
+  const ops=lastOp?["+","−","×","÷"].filter(o=>o!==lastOp):["+","−","×","÷"];
   for(let t=0;t<500;t++){
-    const op=ops[rnd(0,3)];
+    const op=ops[rnd(0,ops.length-1)];
     let a,b,c;
     if(op==="+"){
       if(level>=2){a=rnd(20,Math.min(49,maxNum-1));b=rnd(20,Math.min(49,maxNum-a));if(b<20||a+b>maxNum)continue;c=a+b}
@@ -103,10 +103,10 @@ function randomEquation5(maxNum,level){
   return[1,"+",1,"=",2];
 }
 
-function equationWithKnown5(idx,val,maxNum,level){
-  const ops=["+","−","×","÷"];
+function equationWithKnown5(idx,val,maxNum,level,lastOp){
+  const ops=lastOp?["+","−","×","÷"].filter(o=>o!==lastOp):["+","−","×","÷"];
   for(let t=0;t<1000;t++){
-    const op=ops[rnd(0,3)];
+    const op=ops[rnd(0,ops.length-1)];
     let a,b,c;
     if(idx===0){
       a=val;
@@ -167,16 +167,16 @@ function validLine(cells,line,v,size){
   return true;
 }
 
-function lineCandidate(cells,line,maxNum,level){
+function lineCandidate(cells,line,maxNum,level,lastOp){
   const known=[];
   for(const idx of[0,2,4]){
     const p=coords(line,idx),old=cells[p.r]?.[p.c];
     if(old!==""&&/^\d+$/.test(String(old)))known.push({idx,val:Number(old)});
   }
-  if(!known.length)return randomEquation5(maxNum,level);
+  if(!known.length)return randomEquation5(maxNum,level,lastOp);
   for(let t=0;t<700;t++){
     const first=known[0];
-    const v=equationWithKnown5(first.idx,first.val,maxNum,level);
+    const v=equationWithKnown5(first.idx,first.val,maxNum,level,lastOp);
     if(!v)continue;
     if(known.every(k=>Number(v[k.idx])===k.val))return v;
   }
@@ -200,14 +200,15 @@ function generatePuzzle(){
   for(let attempt=0;attempt<200;attempt++){
     const size=format.size;
     const cells=Array.from({length:size},()=>Array(size).fill(""));
-    let failed=false;
+    let failed=false,lastOp=null;
     for(const line of format.lines){
       let values=null;
       for(let t=0;t<700;t++){
-        const cand=lineCandidate(cells,line,diff.maxNum,diff.level);
+        const cand=lineCandidate(cells,line,diff.maxNum,diff.level,lastOp);
         if(cand&&validLine(cells,line,cand,size)){values=cand;break}
       }
       if(!values){failed=true;break}
+      lastOp=values[1];
       for(let i=0;i<5;i++){const p=coords(line,i);cells[p.r][p.c]=String(values[i])}
     }
     if(failed||!verifyAll(cells,format))continue;
@@ -248,7 +249,7 @@ function generatePuzzle(){
         }
       }
     }
-    return{size,cells,solution,numbers:shuffle([...hidden]),hints:diff.hints,name:format.name};
+    return{size,cells,solution,numbers:[...hidden].sort((a,b)=>a-b),hints:diff.hints,name:format.name};
   }
   alert("No se pudo generar el formato. Probá nuevamente.");
   return{size:5,cells:[["1","+","","=","2"],["","","","",""],["","","","",""],["","","","",""],["","","","",""]],solution:{"0-2":1},numbers:[1],hints:1,name:"Emergencia"};
