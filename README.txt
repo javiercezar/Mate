@@ -1,25 +1,24 @@
-# Juego matemático automático con validación inmediata
+# Juego matemático corregido
 
-## Cambios realizados
-- Ahora marca error en el momento si el número se coloca en una casilla incorrecta.
-- El número incorrecto no queda colocado.
-- Se agregó modo "Automático": arma un crucigrama nuevo cada vez.
-- Se mantiene modo "Plantilla fija".
-- Los números se pueden arrastrar o tocar/clickear.
-- Botón "Nuevo" para generar otro crucigrama automático.
+## Correcciones
+- El generador automático ya no arma columnas sueltas con cálculos incorrectos.
+- Las filas y columnas se generan como operaciones completas: A operador B = Resultado.
+- Se eliminan números extra: ahora hay la misma cantidad de números disponibles que casillas a completar.
+- Los números disponibles son más chicos para que entren mejor en pantalla.
+- Arrastre mejorado en celular con pointer/touch.
+- Validación inmediata: si el número va en lugar incorrecto, marca error y no lo deja colocado.
 
-## Archivos
+## Subir a Hetzner
+Subir estos archivos:
 - index.html
 - style.css
 - app.js
 - levels.js
 
-## Subir a Hetzner
-Subir todos los archivos a la carpeta del sitio, por ejemplo:
+A la carpeta pública, por ejemplo:
 `/var/www/juego-matematico`
 
-Nginx básico:
-
+Nginx:
 server {
     listen 80;
     server_name tu-dominio.com;

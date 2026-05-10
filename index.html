@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Math Cross automático</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,12 +15,12 @@
         <label for="modeSelect">Modo</label>
         <select id="modeSelect">
           <option value="auto">Automático</option>
-          <option value="template">Plantilla fija</option>
+          <option value="template">Plantilla</option>
         </select>
       </div>
 
       <div class="select-wrap" id="templateWrap">
-        <label for="levelSelect">Plantilla</label>
+        <label for="levelSelect">Nivel</label>
         <select id="levelSelect"></select>
       </div>
 
@@ -35,7 +35,10 @@
     <section id="board" class="board" aria-label="Tablero"></section>
 
     <section class="tray">
-      <h3>Números disponibles</h3>
+      <div class="tray-title">
+        <h3>Números disponibles</h3>
+        <small id="availableCount"></small>
+      </div>
       <div id="numbers" class="numbers"></div>
     </section>
 
@@ -44,6 +47,8 @@
       <button id="hintBtn" class="hint">💡 <small id="hintsLeft">x1</small></button>
     </footer>
   </main>
+
+  <div id="dragGhost" class="drag-ghost hidden"></div>
 
   <div id="modal" class="modal hidden">
     <div class="modal-card">

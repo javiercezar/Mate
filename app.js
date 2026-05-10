@@ -7,6 +7,7 @@ let running = true;
 let timerId = null;
 let hints = 0;
 let draggedTile = null;
+let touchTile = null;
 
 const board = document.getElementById("board");
 const numbers = document.getElementById("numbers");
@@ -18,6 +19,8 @@ const levelSelect = document.getElementById("levelSelect");
 const modeSelect = document.getElementById("modeSelect");
 const templateWrap = document.getElementById("templateWrap");
 const message = document.getElementById("message");
+const ghost = document.getElementById("dragGhost");
+const availableCount = document.getElementById("availableCount");
 
 function key(r,c){ return `${r}-${c}`; }
 function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
@@ -35,78 +38,150 @@ function makeEquation(){
   const ops = ["+","−","×"];
   while(true){
     const op = ops[rnd(0, ops.length-1)];
-    let a = rnd(1, 20), b = rnd(1, 12);
+    let a = rnd(1, 18), b = rnd(1, 12);
     if(op === "−" && a <= b) [a,b] = [b,a];
-    if(op === "×"){ a = rnd(2,12); b = rnd(2,9); }
+    if(op === "×"){ a = rnd(2,9); b = rnd(2,8); }
     const res = calc(a,op,b);
     if(res > 0 && res <= 99) return {a,op,b,res};
   }
 }
 
-// Genera un crucigrama nuevo automáticamente.
-// Usa ecuaciones de 5 casillas: A operador B = Resultado.
-// Algunas casillas quedan ocultas y el jugador debe completarlas.
+function canPlace(cells, positions, values){
+  return positions.every((p,i) => {
+    const old = cells[p.r][p.c];
+    return old === "" || String(old) === String(values[i]);
+  });
+}
+
+function writeEq(cells, positions, values){
+  positions.forEach((p,i) => cells[p.r][p.c] = String(values[i]));
+}
+
+// Generador corregido:
+// - Arma grupos horizontales compactos.
+// - Agrega columnas solamente cuando coinciden matemáticamente con una intersección.
+// - Cada fila/columna usada queda como A op B = Resultado.
 function generateAutoPuzzle(){
   const size = 11;
   const cells = Array.from({length:size}, () => Array(size).fill(""));
   const solution = {};
   const hiddenNumbers = [];
-  const starts = shuffle([
-    {r:0,c:0,d:"h"},{r:2,c:0,d:"h"},{r:4,c:0,d:"h"},{r:6,c:0,d:"h"},{r:8,c:0,d:"h"},
-    {r:0,c:6,d:"h"},{r:2,c:6,d:"h"},{r:4,c:6,d:"h"},{r:6,c:6,d:"h"},{r:8,c:6,d:"h"},
-    {r:0,c:0,d:"v"},{r:0,c:2,d:"v"},{r:0,c:4,d:"v"},{r:0,c:6,d:"v"},{r:0,c:8,d:"v"},{r:0,c:10,d:"v"}
-  ]);
+  const equations = [];
 
-  let placedEq = 0;
-  let attempts = 0;
+  const horizontalStarts = [
+    {r:0,c:0},{r:2,c:0},{r:4,c:0},{r:6,c:0},{r:8,c:0},
+    {r:0,c:6},{r:2,c:6},{r:4,c:6},{r:6,c:6},{r:8,c:6}
+  ];
 
-  while(placedEq < 8 && attempts < 500){
-    attempts++;
-    const s = starts[attempts % starts.length];
-    const positions = [];
-    for(let i=0;i<5;i++){
-      positions.push({r:s.r + (s.d==="v"?i:0), c:s.c + (s.d==="h"?i:0)});
-    }
-    if(positions.some(p => p.r >= size || p.c >= size)) continue;
-
+  // Primero coloca filas agrupadas.
+  for(const s of shuffle(horizontalStarts).slice(0,8)){
     const eq = makeEquation();
     const values = [eq.a, eq.op, eq.b, "=", eq.res];
-
-    let conflict = false;
-    for(let i=0;i<5;i++){
-      const p = positions[i];
-      const existing = cells[p.r][p.c];
-      if(existing !== "" && String(existing) !== String(values[i])) conflict = true;
+    const pos = [0,1,2,3,4].map(i => ({r:s.r, c:s.c+i}));
+    if(canPlace(cells,pos,values)){
+      writeEq(cells,pos,values);
+      equations.push({positions:pos, values});
     }
-    if(conflict) continue;
-
-    for(let i=0;i<5;i++){
-      const p = positions[i];
-      cells[p.r][p.c] = String(values[i]);
-    }
-
-    // Oculta entre 1 y 2 números por ecuación, nunca operadores.
-    const numberIndexes = shuffle([0,2,4]).slice(0, rnd(1,2));
-    numberIndexes.forEach(i => {
-      const p = positions[i];
-      const k = key(p.r,p.c);
-      if(solution[k] === undefined){
-        solution[k] = Number(values[i]);
-        hiddenNumbers.push(Number(values[i]));
-        cells[p.r][p.c] = "";
-      }
-    });
-
-    placedEq++;
   }
 
-  // Evita números repetidos en exceso agregando algunos distractores.
-  const distractors = Array.from({length: Math.max(3, 18 - hiddenNumbers.length)}, () => rnd(1,28));
+  // Luego intenta columnas reales usando números existentes como intersección.
+  const intersections = [];
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      if(/^\d+$/.test(cells[r][c])) intersections.push({r,c,value:Number(cells[r][c])});
+    }
+  }
+
+  let verticals = 0;
+  for(const inter of shuffle(intersections)){
+    if(verticals >= 4) break;
+
+    // La intersección puede ser A, B o Resultado dentro de A op B = Resultado.
+    const possibleIndex = shuffle([0,2,4]);
+    let placedV = false;
+
+    for(const idx of possibleIndex){
+      const startR = inter.r - idx;
+      const c = inter.c;
+      if(startR < 0 || startR + 4 >= size) continue;
+
+      for(let attempt=0; attempt<80; attempt++){
+        const op = ["+","−","×"][rnd(0,2)];
+        let a,b,res;
+
+        if(idx === 0){
+          a = inter.value;
+          b = rnd(1,12);
+          if(op === "−" && a <= b) continue;
+          if(op === "×") b = rnd(2,8);
+          res = calc(a,op,b);
+        } else if(idx === 2){
+          b = inter.value;
+          a = rnd(1,18);
+          if(op === "−" && a <= b) continue;
+          if(op === "×") a = rnd(2,9);
+          res = calc(a,op,b);
+        } else {
+          res = inter.value;
+          if(op === "+"){
+            a = rnd(1, Math.max(1,res-1));
+            b = res - a;
+          } else if(op === "−"){
+            b = rnd(1,12);
+            a = res + b;
+          } else {
+            const divs = [];
+            for(let d=2; d<=9; d++) if(res % d === 0) divs.push(d);
+            if(!divs.length) continue;
+            a = divs[rnd(0,divs.length-1)];
+            b = res / a;
+          }
+        }
+
+        if(res === null || res <= 0 || res > 99) continue;
+
+        const values = [a,op,b,"=",res];
+        if(Number(values[idx]) !== inter.value) continue;
+
+        const pos = [0,1,2,3,4].map(i => ({r:startR+i, c}));
+        if(canPlace(cells,pos,values)){
+          writeEq(cells,pos,values);
+          equations.push({positions:pos, values});
+          verticals++;
+          placedV = true;
+          break;
+        }
+      }
+      if(placedV) break;
+    }
+  }
+
+  // Oculta números. No se ocultan operadores ni iguales.
+  const numberCells = [];
+  equations.forEach(eq => {
+    [0,2,4].forEach(i => {
+      const p = eq.positions[i];
+      const k = key(p.r,p.c);
+      if(solution[k] === undefined) {
+        numberCells.push({p, value:Number(eq.values[i])});
+      }
+    });
+  });
+
+  // Cantidad acotada para que los disponibles entren en pantalla.
+  const toHide = shuffle(numberCells).slice(0, Math.min(14, Math.max(8, numberCells.length)));
+  toHide.forEach(item => {
+    const k = key(item.p.r,item.p.c);
+    solution[k] = item.value;
+    hiddenNumbers.push(item.value);
+    cells[item.p.r][item.p.c] = "";
+  });
+
   return {
     name: "Automático",
     size,
     hints: 2,
-    numbers: shuffle([...hiddenNumbers, ...distractors]),
+    numbers: shuffle(hiddenNumbers),
     cells,
     solution
   };
@@ -189,15 +264,6 @@ function buildBoard(){
             placeNumber(draggedTile);
           }
         });
-
-        div.addEventListener("pointerup", () => {
-          const mobileTile = document.querySelector(".tile.dragging-touch");
-          if(mobileTile) {
-            selectSlot(div);
-            placeNumber(mobileTile);
-            mobileTile.classList.remove("dragging-touch");
-          }
-        });
       } else {
         div.textContent = value;
       }
@@ -216,7 +282,9 @@ function buildNumbers(){
     btn.dataset.value = n;
     btn.draggable = true;
 
-    btn.onclick = () => placeByClick(btn);
+    btn.onclick = () => {
+      if(!touchTile) placeByClick(btn);
+    };
 
     btn.addEventListener("dragstart", () => {
       draggedTile = btn;
@@ -228,16 +296,65 @@ function buildNumbers(){
       document.querySelectorAll(".drag-over").forEach(x => x.classList.remove("drag-over"));
     });
 
-    btn.addEventListener("pointerdown", () => {
-      btn.classList.add("dragging-touch");
-    });
-    btn.addEventListener("pointerup", () => {
-      setTimeout(() => btn.classList.remove("dragging-touch"), 80);
-    });
+    // Arrastre real para celular.
+    btn.addEventListener("pointerdown", startTouchDrag);
 
     numbers.appendChild(btn);
   });
   updateHints();
+  availableCount.textContent = `${currentPuzzle.numbers.length} casillas`;
+}
+
+function startTouchDrag(e){
+  const btn = e.currentTarget;
+  if(btn.classList.contains("used")) return;
+
+  touchTile = btn;
+  btn.setPointerCapture?.(e.pointerId);
+  ghost.textContent = btn.dataset.value;
+  ghost.classList.remove("hidden");
+  moveGhost(e.clientX, e.clientY);
+
+  const move = ev => {
+    ev.preventDefault();
+    moveGhost(ev.clientX, ev.clientY);
+    markSlotUnder(ev.clientX, ev.clientY);
+  };
+
+  const up = ev => {
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    ghost.classList.add("hidden");
+    document.querySelectorAll(".drag-over").forEach(x => x.classList.remove("drag-over"));
+
+    const slot = slotAt(ev.clientX, ev.clientY);
+    if(slot){
+      selectSlot(slot);
+      placeNumber(btn);
+    }
+    setTimeout(()=> touchTile = null, 120);
+  };
+
+  document.addEventListener("pointermove", move, {passive:false});
+  document.addEventListener("pointerup", up);
+}
+
+function moveGhost(x,y){
+  ghost.style.left = x + "px";
+  ghost.style.top = y + "px";
+}
+
+function slotAt(x,y){
+  ghost.classList.add("hidden");
+  const el = document.elementFromPoint(x,y);
+  ghost.classList.remove("hidden");
+  return el?.closest?.(".slot");
+}
+
+function markSlotUnder(x,y){
+  document.querySelectorAll(".drag-over").forEach(s => s.classList.remove("drag-over"));
+  const slot = slotAt(x,y);
+  if(slot) slot.classList.add("drag-over");
 }
 
 function selectSlot(div){
@@ -269,19 +386,20 @@ function placeNumber(btn){
 
   selected.classList.remove("correct","wrong");
 
-  // VALIDACIÓN INMEDIATA: si está mal, marca error y NO deja colocado el número.
+  // Validación inmediata.
   if(value !== correct){
+    const previous = placed[pos]?.value ?? "";
     selected.textContent = value;
     selected.classList.add("wrong");
-    setMessage("Ese número no corresponde a esa casilla.", "error");
+    setMessage("Error: ese número no corresponde a esa casilla.", "error");
 
     setTimeout(() => {
-      if(selected && selected.dataset.pos === pos && selected.classList.contains("wrong")){
-        selected.textContent = placed[pos]?.value ?? "";
-        selected.classList.remove("wrong");
+      const cell = document.querySelector(`.slot[data-pos="${pos}"]`);
+      if(cell && cell.classList.contains("wrong")){
+        cell.textContent = previous;
+        cell.classList.remove("wrong");
       }
     }, 650);
-
     return;
   }
 
