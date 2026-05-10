@@ -213,47 +213,25 @@ function generatePuzzle(){
       for(let i=0;i<5;i++){const p=coords(line,i);cells[p.r][p.c]=String(values[i])}
     }
     if(failed||!verifyAll(cells,format))continue;
+    const traySize=[5,10,15][currentDifficulty];
+    const allPositions=[];
+    for(const line of format.lines){
+      for(const idx of[0,2,4]){
+        allPositions.push({line,idx});
+      }
+    }
+    shuffle(allPositions);
+    const chosen=allPositions.slice(0,Math.min(traySize,allPositions.length));
     const solution={},hidden=[];
-    for(const line of format.lines){
-      for(const idx of line.hide){
-        const p=coords(line,idx),k=key(p.r,p.c),value=cells[p.r][p.c];
-        if(value!==""&&/^\d+$/.test(value)&&solution[k]===undefined){
-          solution[k]=Number(value);
-          hidden.push(Number(value));
-          cells[p.r][p.c]="";
-        }
+    for(const{line,idx}of chosen){
+      const p=coords(line,idx),k=key(p.r,p.c),value=cells[p.r][p.c];
+      if(solution[k]===undefined){
+        solution[k]=Number(value);
+        hidden.push(Number(value));
+        cells[p.r][p.c]="";
       }
     }
-    for(const line of format.lines){
-      const opts=[0,2,4].filter(i=>!line.hide.includes(i));
-      shuffle(opts);
-      const take=Math.min(opts.length,diff.level>=2?2:1);
-      for(let j=0;j<take;j++){
-        const p=coords(line,opts[j]),k=key(p.r,p.c);
-        if(solution[k]===undefined){
-          const value=cells[p.r][p.c];
-          if(value!==""&&/^\d+$/.test(value)){
-            solution[k]=Number(value);
-            hidden.push(Number(value));
-            cells[p.r][p.c]="";
-          }
-        }
-      }
-    }
-    const distractors=[],hiddenSet=new Set(hidden);
-    for(let i=0;i<hidden.length;i++){
-      let found=false;
-      for(let t=0;t<100;t++){
-        const d=rnd(1,diff.maxNum);
-        if(!hiddenSet.has(d)&&!distractors.includes(d)){distractors.push(d);found=true;break}
-      }
-      if(!found){
-        for(let d=1;d<=diff.maxNum;d++){
-          if(!hiddenSet.has(d)&&!distractors.includes(d)){distractors.push(d);break}
-        }
-      }
-    }
-    return{size,cells,solution,numbers:shuffle([...hidden,...distractors]),hints:diff.hints,name:format.name};
+    return{size,cells,solution,numbers:shuffle([...hidden]),hints:diff.hints,name:format.name};
   }
   alert("No se pudo generar el formato. Probá nuevamente.");
   return{size:5,cells:[["1","+","","=","2"],["","","","",""],["","","","",""],["","","","",""],["","","","",""]],solution:{"0-2":1},numbers:[1],hints:1,name:"Emergencia"};
@@ -327,7 +305,7 @@ function buildNumbers(){
     numbers.appendChild(b);
   });
   updateHints();
-  availableCount.textContent=`${Object.keys(currentPuzzle.solution).length} para completar · ${currentPuzzle.numbers.length} fichas`;
+  availableCount.textContent=`${currentPuzzle.numbers.length} para completar`;
 }
 
 function startTouchDrag(e){
