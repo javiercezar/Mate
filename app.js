@@ -213,22 +213,41 @@ function generatePuzzle(){
       for(let i=0;i<5;i++){const p=coords(line,i);cells[p.r][p.c]=String(values[i])}
     }
     if(failed||!verifyAll(cells,format))continue;
-    const traySize=[5,10,15][currentDifficulty];
-    const allPositions=[];
-    for(const line of format.lines){
-      for(const idx of[0,2,4]){
-        allPositions.push({line,idx});
+    const traySize=[10,15,20][currentDifficulty];
+    const lines=format.lines;
+    const perLineBlanks=lines.map(()=>[]);
+    if(traySize<lines.length){
+      const lineIndices=shuffle([...Array(lines.length).keys()]);
+      for(let i=0;i<traySize;i++){
+        perLineBlanks[lineIndices[i]].push([0,2,4][rnd(0,2)]);
+      }
+    }else{
+      for(let i=0;i<lines.length;i++){
+        perLineBlanks[i].push([0,2,4][rnd(0,2)]);
+      }
+      const remaining=[];
+      for(let i=0;i<lines.length;i++){
+        for(const idx of[0,2,4]){
+          if(!perLineBlanks[i].includes(idx)){
+            remaining.push({lineIdx:i,idx});
+          }
+        }
+      }
+      shuffle(remaining);
+      const extra=Math.min(traySize-lines.length,remaining.length);
+      for(let j=0;j<extra;j++){
+        perLineBlanks[remaining[j].lineIdx].push(remaining[j].idx);
       }
     }
-    shuffle(allPositions);
-    const chosen=allPositions.slice(0,Math.min(traySize,allPositions.length));
     const solution={},hidden=[];
-    for(const{line,idx}of chosen){
-      const p=coords(line,idx),k=key(p.r,p.c),value=cells[p.r][p.c];
-      if(solution[k]===undefined){
-        solution[k]=Number(value);
-        hidden.push(Number(value));
-        cells[p.r][p.c]="";
+    for(let i=0;i<lines.length;i++){
+      for(const idx of perLineBlanks[i]){
+        const p=coords(lines[i],idx),k=key(p.r,p.c),value=cells[p.r][p.c];
+        if(solution[k]===undefined){
+          solution[k]=Number(value);
+          hidden.push(Number(value));
+          cells[p.r][p.c]="";
+        }
       }
     }
     return{size,cells,solution,numbers:shuffle([...hidden]),hints:diff.hints,name:format.name};
