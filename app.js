@@ -202,27 +202,34 @@ function generatePuzzle(){
       for(let i=0;i<5;i++){const p=coords(line,i);cells[p.r][p.c]=String(values[i])}
     }
     if(failed||!verifyAll(cells,format))continue;
-    const solution={},hidden=[],solVals=new Set();
+    const solution={},hidden=[];
     for(const line of format.lines){
       for(const idx of line.hide){
         const p=coords(line,idx),k=key(p.r,p.c),value=cells[p.r][p.c];
         if(value!==""&&/^\d+$/.test(value)&&solution[k]===undefined){
-          const n=Number(value);
-          solution[k]=n;
-          hidden.push(n);
-          solVals.add(n);
+          solution[k]=Number(value);
+          hidden.push(Number(value));
           cells[p.r][p.c]="";
         }
       }
     }
-    const numbers=[...hidden];
-    const extraCount=hidden.length;
-    for(let i=0;i<extraCount;i++){
-      let n;
-      for(let t=0;t<50;t++){n=rnd(1,diff.maxNum);if(!solVals.has(n))break}
-      if(n!==undefined&&!solVals.has(n)){numbers.push(n);solVals.add(n)}else break;
+    for(const line of format.lines){
+      const opts=[0,2,4].filter(i=>!line.hide.includes(i));
+      shuffle(opts);
+      const take=Math.min(opts.length,diff.level>=2?2:1);
+      for(let j=0;j<take;j++){
+        const p=coords(line,opts[j]),k=key(p.r,p.c);
+        if(solution[k]===undefined){
+          const value=cells[p.r][p.c];
+          if(value!==""&&/^\d+$/.test(value)){
+            solution[k]=Number(value);
+            hidden.push(Number(value));
+            cells[p.r][p.c]="";
+          }
+        }
+      }
     }
-    return{size,cells,solution,numbers:shuffle(numbers),hints:diff.hints,name:format.name};
+    return{size,cells,solution,numbers:shuffle([...hidden]),hints:diff.hints,name:format.name};
   }
   alert("No se pudo generar el formato. Probá nuevamente.");
   return{size:5,cells:[["1","+","","=","2"],["","","","",""],["","","","",""],["","","","",""],["","","","",""]],solution:{"0-2":1},numbers:[1],hints:1,name:"Emergencia"};
